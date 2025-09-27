@@ -24,4 +24,4 @@ class ContextItem(Base):
     version = Column(Integer, default=1) #lan update thu may?
     created_at = Column(DateTime, default=func.now())
     
-    section = relationship("Section", back_populates="context")
+    section = relationship("Section", back_populates="context_items")
