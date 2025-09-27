@@ -6,7 +6,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
 from db_models import Section, ContextItem, Base
-
+from transformers import pipeline
 
 load_dotenv()
 client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
@@ -19,6 +19,7 @@ SessionLocal = sessionmaker(bind=engine)
 
 chat_history = []
 CHAT_THREADHOLD = 5
+BUFFER_SIZE = CHAT_THREADHOLD
 
 '''
 DOCS:
@@ -26,6 +27,11 @@ DOCS:
 - Query = Context gần nhất +User input: get_lattest_summary -->complete user prompt --> call model
 '''
 
+'''
+- Cải tiến:
++ Thêm buffer memory hỗ trợ trả lời các câu hỏi trong cùng 1 batch(chưa summarize)
++ Thêm model open source cho tác vụ summarize --> giảm chi phí --> toàn model tệ
+'''
 
 def save_summary(section_id, summary_text):
     with SessionLocal() as db:
@@ -55,6 +61,8 @@ def get_latest_summary(section_id):
         )
         return latest.summary_text if latest else None
     
+#model open source cho tac vu summarize
+summarizer = pipeline("summarization", model="VietAI/vit5-base",tokenizer="VietAI/vit5-base", device=0)
 def summarize_and_update(section_id):
     latest_summary = get_latest_summary(section_id)
     recent_chat = "\n".join(
@@ -74,20 +82,13 @@ def summarize_and_update(section_id):
     giữ lại các quyết định, yêu cầu, constraint quan trọng.
     Output: bullet points.
     """
+    input_text = f"{system_prompt}\n\n{conversation_text}"
+    summary = summarizer(input_text, max_length=500, min_length=50, do_sample=False)
+    summary_text = summary[0]['summary_text']
     
-    response = client.chat.completions.create(
-        model="gpt-4o-mini",
-        messages=[
-            {"role":"system", "content": system_prompt},
-            {"role":"user", "content": conversation_text}
-        ],
-        temperature = 0.3,
-    )
-    summary = response.choices[0].message.content
+    save_summary(section_id, summary_text)
     
-    save_summary(section_id, summary)
-    
-    return summary
+    return summary_text
 
 
 def chat_with_bot(section_id, user_input):
@@ -98,20 +99,26 @@ def chat_with_bot(section_id, user_input):
             "\n\nĐây là tóm tắt context trước đó, hãy dùng để trả lời nhất quán:\n"
             f"{latest_summary}"
         )
+        
+    # buffer N lượt chat gần nhất
+    buffer_msgs = []
+    for u, a in chat_history[-BUFFER_SIZE:]: 
+        buffer_msgs.append({"role":"user", "content": u})
+        buffer_msgs.append({"role":"assistant", "content": a})
+    
+    messages = [{"role":"system", "content":system_prompt}] + buffer_msgs + [{"role":"user", "content": user_input}]
     response = client.chat.completions.create(
         model="gpt-4.1-mini",
-        messages=[
-            {"role":"system", "content":system_prompt},
-            {"role":"user", "content": user_input}
-        ],
+        messages=messages,
     )
     bot_reply = response.choices[0].message.content
     
+    print(f"Context: {messages}\n\n========================\n\n")
     chat_history.append((user_input, bot_reply))
     
     if len(chat_history) % CHAT_THREADHOLD == 0:
         summary = summarize_and_update(section_id)
-        print("\n[CONTEXT UPDATED]\n", summary)
+        print("\n[CONTEXT UPDATED]\\n===================\n\n", summary)
         
     return bot_reply
 
@@ -129,7 +136,7 @@ def create_section(name: str):
         return new_section.section_id
 
 def run_chat():
-    section_id = create_section("second test")
+    section_id = create_section("third test")
     print(f"Created section: {section_id}\n")
     
     while True:
@@ -142,6 +149,7 @@ def run_chat():
         print(f"Bot: {reply}\n")
         
 if __name__ == "__main__":
+    print(f"Chat history: {len(chat_history)}")
     run_chat()
     
     
