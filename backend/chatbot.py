@@ -62,7 +62,7 @@ def get_latest_summary(section_id):
         return latest.summary_text if latest else None
     
 #model open source cho tac vu summarize
-summarizer = pipeline("summarization", model="VietAI/vit5-base",tokenizer="VietAI/vit5-base", device=0)
+#summarizer = pipeline("summarization", model="VietAI/vit5-base",tokenizer="VietAI/vit5-base", device=0)
 def summarize_and_update(section_id):
     latest_summary = get_latest_summary(section_id)
     recent_chat = "\n".join(
@@ -82,10 +82,21 @@ def summarize_and_update(section_id):
     giữ lại các quyết định, yêu cầu, constraint quan trọng.
     Output: bullet points.
     """
-    input_text = f"{system_prompt}\n\n{conversation_text}"
-    summary = summarizer(input_text, max_length=500, min_length=50, do_sample=False)
-    summary_text = summary[0]['summary_text']
+    # input_text = f"{system_prompt}\n\n{conversation_text}"
+    # summary = summarizer(input_text, max_length=500, min_length=50, do_sample=False)
+    # summary_text = summary[0]['summary_text']
     
+    response = client.chat.completions.create(
+        model="gpt-4o-mini",
+        messages=[
+            {"role": "system", "content": system_prompt},
+            {"role": "user", "content": conversation_text},
+        ],
+        temperature=0.3,
+        max_tokens=500
+    )
+    
+    summary_text = response.choices[0].message.content.strip()
     save_summary(section_id, summary_text)
     
     return summary_text
@@ -136,7 +147,7 @@ def create_section(name: str):
         return new_section.section_id
 
 def run_chat():
-    section_id = create_section("third test")
+    section_id = create_section("fourth test")
     print(f"Created section: {section_id}\n")
     
     while True:
