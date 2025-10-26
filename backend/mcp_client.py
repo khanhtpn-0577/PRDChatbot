@@ -8,7 +8,7 @@ from dotenv import load_dotenv
 import re
 
 ##MCP Server URL
-MCP_SERVER_URL = "https://81ac0c486085.ngrok-free.app/mcp"
+MCP_SERVER_URL = "https://a06c2db71df3.ngrok-free.app/mcp"
 
 ##LLM CONFIG
 load_dotenv()
@@ -130,5 +130,5 @@ async def test_navigate(prompt:str):
 
 
 if __name__ == "__main__":
-    prompt = "what is artificial intelligent"
+    prompt = "lịch thi đấu bóng đá c1 ngày 21/10/2025"
     asyncio.run(test_navigate(prompt))
