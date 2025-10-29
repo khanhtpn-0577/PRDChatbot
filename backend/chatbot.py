@@ -6,7 +6,7 @@ import asyncio
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
-from db_models import Section, ContextItem, Base
+from db_models import Section, ContextItem, PRD, Base
 from transformers import pipeline
 from mcp_client import *
 
@@ -328,6 +328,91 @@ Output:
         
     return bot_reply
 
+# ===========================================================
+#  HÀM LƯU PRD MỚI NHẤT VÀO DATABASE
+# ===========================================================
+def save_prd(section_id, prd_text):
+    """
+    Lưu PRD mới nhất vào bảng PRD, tự tăng version và vô hiệu hóa các bản active cũ.
+    Đảm bảo chỉ có 1 bản is_active=True tại mọi thời điểm.
+    """
+    with SessionLocal() as db:
+        #Lấy tất cả bản đang active
+        active_items = (
+            db.query(PRD)
+            .filter(PRD.section_id == section_id, PRD.is_active == True)
+            .all()
+        )
+
+        # Nếu có active bản cũ → tắt tất cả
+        for item in active_items:
+            item.is_active = False
+
+        # Tìm version cao nhất hiện tại để tăng thêm 1
+        latest = (
+            db.query(PRD)
+            .filter(PRD.section_id == section_id)
+            .order_by(PRD.version.desc())
+            .first()
+        )
+        new_version = 1 if latest is None else latest.version + 1
+
+        # Tạo bản mới active duy nhất
+        new_prd = PRD(
+            section_id=section_id,
+            prd_text=prd_text.strip(),
+            version=new_version,
+            is_active=True,
+        )
+        db.add(new_prd)
+        db.commit()
+        print(f"[SAVED PRD v{new_version}] Section {section_id}")
+
+def extract_prd_text(full_text):
+    """
+    Dùng AI kiểm tra xem phản hồi có chứa PRD không.
+    Nếu có, tách riêng phần PRD theo định dạng Markdown chuẩn.
+    """
+    system_prompt = """
+Bạn là một AI Extractor. 
+Đầu vào là một đoạn văn bản có thể chứa PRD hoặc lời giới thiệu khác.
+Nhiệm vụ của bạn:
+1. Nếu KHÔNG có PRD trong văn bản, trả về JSON: {"is_prd": false}.
+2. Nếu CÓ PRD (bắt đầu bằng '# Requirements Document'), 
+   hãy trích xuất NGUYÊN PHẦN PRD và trả về JSON:
+   {
+      "is_prd": true,
+      "prd_content": "<nội dung đầy đủ từ # Requirements Document trở đi>"
+   }
+
+Chỉ trả về JSON hợp lệ, không thêm lời giải thích.
+"""
+
+    response = client.chat.completions.create(
+        model="gpt-4.1-mini",
+        messages=[
+            {"role": "system", "content": system_prompt},
+            {"role": "user", "content": full_text},
+        ],
+        temperature=0,
+        max_tokens=800,
+    )
+    text = response.choices[0].message.content.strip()
+    print(f"\n[PRD EXTRACTION RAW OUTPUT]\n{text}\n")
+    
+    match = re.search(r"\{.*?\}", text, re.DOTALL)
+
+    if not match:
+        return {"notice": "No JSON found", "is_prd": False}
+
+    try:
+        data = json.loads(match.group(0))
+        print(f"\n[Parsed PRD Extraction Data]\n{data}\n")
+        return data
+    except Exception:
+        return {"notice": "JSON parse error", "is_prd": False}
+
+
 def create_section(name: str):
     with SessionLocal() as db:
         section = db.query(Section).filter(Section.section_name == name).first()
@@ -343,7 +428,7 @@ def create_section(name: str):
 
 # ============ MAIN CHAT LOOP ===================
 async def run_chat():
-    section_id = create_section("mcp-orchestrated-test-v3")
+    section_id = create_section("mcp-orchestrated-test-v9")
     print(f"Created section: {section_id}\n")
 
     while True:
@@ -362,6 +447,18 @@ async def run_chat():
             if mcp_data:
                 enriched_input = f"{user_input}\n\n[Dữ liệu MCP thu thập được:]\n{mcp_data}"
                 reply = await prd_chatbot(section_id, enriched_input)
+                
+                # extract prd
+                extraction = extract_prd_text(reply)
+                if extraction.get("is_prd"):
+                    prd_content = extraction.get("prd_content", "").strip()
+                    if prd_content.startswith("# Requirements Document"):
+                        save_prd(section_id, prd_content)
+                        print("[PRD extracted and saved to DB]")
+                    else:
+                        print("[PRD format not detected correctly]")
+                else:
+                    print("[Không phát hiện PRD trong phản hồi.]")
             else:
                 reply = "Không tìm thấy dữ liệu phù hợp từ MCP."
             # Lưu lịch sử
@@ -370,6 +467,18 @@ async def run_chat():
         elif route == "PRD_related_answer":
             reply = await prd_chatbot(section_id, user_input)
             chat_history.append((user_input, reply))
+            # extract prd
+            extraction = extract_prd_text(reply)
+            print(f"\n[PRD EXTRACTION RESULT]\n{extraction}\n")
+            if extraction.get("is_prd"):
+                prd_content = extraction.get("prd_content", "").strip()
+                if prd_content.startswith("# Requirements Document"):
+                    save_prd(section_id, prd_content)
+                    print("[PRD extracted and saved to DB]")
+                else:
+                    print("[PRD format not detected correctly]")
+            else:
+                print("[Không phát hiện PRD trong phản hồi.]")
 
         elif route == "direct_answer":
             reply = route_info.get("content", "").strip() or "Đã nhận yêu cầu của bạn."
