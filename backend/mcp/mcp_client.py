@@ -8,7 +8,7 @@ from dotenv import load_dotenv
 import re
 
 ##MCP Server URL
-MCP_SERVER_URL = "https://a06c2db71df3.ngrok-free.app/mcp"
+MCP_SERVER_URL = "https://c90c2aa10623.ngrok-free.app/mcp"
 
 ##LLM CONFIG
 load_dotenv()
