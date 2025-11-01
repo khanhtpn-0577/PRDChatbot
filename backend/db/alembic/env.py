@@ -7,7 +7,7 @@ from alembic import context
 
 import sys, os
 sys.path.append(os.path.dirname(os.path.dirname(__file__)))  # thêm path cha (backend/)
-from backend.db.db_models import Base
+from db_models import Base
 
 config = context.config
 
