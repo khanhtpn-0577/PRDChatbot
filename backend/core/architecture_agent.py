@@ -213,7 +213,7 @@ def save_architecture(prd_id, architecture_text):
 
 def main():
     if len(sys.argv) < 2:
-        print("Sử dụng: python generate_architecture.py <section_id>")
+        print("Sử dụng: python architecture_agent.py <section_id>")
         sys.exit(1)
 
     section_id_arg = sys.argv[1]
