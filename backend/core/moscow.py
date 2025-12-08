@@ -4,7 +4,7 @@ from dotenv import load_dotenv
 load_dotenv()
 client = OpenAI()
 
-async def moscow_define_priority(lattest_summary, user_input, chat_history, deep_research = "None", BUFFER_SIZE=5):
+async def moscow_define_priority(lattest_summary, user_input, chat_history, deep_research_string = "None", BUFFER_SIZE=5):
     system_prompt = '''
 #Bạn là một AI chuyên gia Product Management, có nhiệm vụ phân tích yêu cầu người dùng, thông tin bổ sung, lịch sử hội thoại và tạo ra danh sách feature (tính năng) của sản phẩm.
 #Kết quả phải được phân loại theo phương pháp MoSCoW gồm:
@@ -66,7 +66,7 @@ TIÊU CHÍ PHÂN LOẠI MOSCOW
 - Wont: sẽ không làm ở giai đoạn này.
 
 \n\nĐây là tóm tắt context trước đó, hãy dùng để trả lời nhất quán:\n{lattest_summary}\n\n
-\n\nĐây là tài liệu phân tích nghiên cứu thị trường ngầm (nếu có):\n{deep_research}\n\n
+\n\nĐây là tài liệu phân tích nghiên cứu thị trường ngầm (nếu có):\n{deep_research_string}\n\n
 '''
 
     # buffer N lượt chat gần nhất

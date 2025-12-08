@@ -2,19 +2,21 @@ from openai import OpenAI
 from dotenv import load_dotenv
 from core.summarizer import get_latest_summary
 from core.moscow import moscow_define_priority
+from core.deep_research import *
 
 load_dotenv()
 client = OpenAI()
 
-async def prd_chatbot(section_id, user_input, chat_history, BUFFER_SIZE=5):
+async def prd_chatbot(section_id, user_input, chat_history, is_deep_research, BUFFER_SIZE=5):
     latest_summary = get_latest_summary(section_id)
-    deep_research = "None"  # Placeholder for deep research data if available
+    if is_deep_research:
+        deep_research_output = await deep_research(user_input, 3)
     
     prd_output = await moscow_define_priority(
         lattest_summary=latest_summary,
         user_input=user_input,
         chat_history=chat_history,
-        deep_research=deep_research,
+        deep_research_string=deep_research_output,
         BUFFER_SIZE=BUFFER_SIZE
     )
     

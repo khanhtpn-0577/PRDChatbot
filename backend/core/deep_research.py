@@ -66,17 +66,10 @@ Hãy phân tích nội dung và rút trích danh sách các feature theo đúng 
     #print(f"\n[Extracted Features]\n{text}\n")
     return text
 
-async def deep_research(user_input: str, session) -> list:
+async def deep_research(user_input: str, limit: 3) -> list:
     """
     Phân tích user_input, tạo keyword tiếng Anh để search URL,
     gọi MCP tool search_url, và trả về list URLs.
-    """
-    # 1. Gọi LLM để sinh keyword tiếng Anh
-    system_prompt = """
-    You are an AI assistant. Your task is:
-    - Read the user's input.
-    - Extract a short English keyword or phrase (1–6 words) suitable for a web search.
-    - Return ONLY the keyword, no explanation.
     """
     results = []
     async with streamablehttp_client(MCP_SERVER_URL) as (read, write, get_session_id):
@@ -84,7 +77,7 @@ async def deep_research(user_input: str, session) -> list:
             await session.initialize()
             
             #Goi tool search_url
-            result_url = await session.call_tool("search_url", {"keyword": user_input, "limit": 3})
+            result_url = await session.call_tool("search_url", {"keyword": user_input, "limit": limit})
 
             #Trích xuất URLs từ content
             urls = []
