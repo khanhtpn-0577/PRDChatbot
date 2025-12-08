@@ -5,7 +5,7 @@ from dotenv import load_dotenv
 from openai import OpenAI
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
-from backend.db.db_models import PRD, Architecture, Plan, Base
+from db.db_models import PRD, Architecture, Plan, Base
 
 # ================== CONFIG ==================
 load_dotenv()

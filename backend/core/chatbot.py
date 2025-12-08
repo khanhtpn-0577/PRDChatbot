@@ -6,14 +6,14 @@ import asyncio
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
-from backend.db.db_models import Section, ContextItem, PRD, Base
-from backend.mcp.mcp_client import *
+from db.db_models import Section, ContextItem, PRD, Base
+from core.mcp_client import *
 
-from backend.core.orchestrator import ai_orchestrator
-from backend.core.mcp_integration import mcp_integration
-from backend.core.prd_agent import prd_chatbot
-from backend.core.prd_storage import save_prd, extract_prd_text
-from backend.core.summarizer import summarize_and_update
+from core.orchestrator import ai_orchestrator
+from core.mcp_integration import mcp_integration
+from core.prd_agent import prd_chatbot
+from core.prd_storage import save_prd, extract_prd_text
+from core.summarizer import summarize_and_update
 
 load_dotenv()
 client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
@@ -43,7 +43,7 @@ def create_section(name: str):
 
 # ============ MAIN CHAT LOOP ===================
 async def run_chat():
-    section_id = create_section("mcp-orchestrated-test-v69")
+    section_id = create_section("mcp-orchestrated-test-v21")
     print(f"Created section: {section_id}\n")
 
     while True:

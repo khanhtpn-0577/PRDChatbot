@@ -1,7 +1,7 @@
 import os, json, re
 from openai import OpenAI
 from dotenv import load_dotenv
-from backend.core.summarizer import get_latest_summary
+from core.summarizer import get_latest_summary
 
 load_dotenv()
 client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))

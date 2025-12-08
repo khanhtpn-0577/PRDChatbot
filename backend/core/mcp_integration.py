@@ -1,5 +1,5 @@
 from openai import OpenAI
-from backend.mcp.mcp_client import *
+from core.mcp_client import *
 import os
 from dotenv import load_dotenv
 
