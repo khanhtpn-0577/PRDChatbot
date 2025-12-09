@@ -1,7 +1,7 @@
 import os
 from openai import OpenAI
 from dotenv import load_dotenv
-from backend.db.db_models import ContextItem
+from db.db_models import ContextItem
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy import create_engine
 

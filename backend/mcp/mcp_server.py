@@ -66,6 +66,78 @@ def web_search(query: str, limit: int = 1) -> list: #limit: luong ket qua tra ve
         
     return results or [{"message": "No results found."}]
 
+@mcp.tool()
+def search_url(keyword: str, limit: int = 10) -> list:
+    """
+    Search Google using SerpAPI and return a list of top URLs.
+    Args:
+        keyword (str): Search keyword.
+        limit (int): Number of URLs to return.
+    Returns:
+        list: URLs or error message.
+    """
+    serpapi_key = os.getenv("SERPAPI_KEY")
+    if not serpapi_key:
+        return ["Error: Missing SERPAPI_KEY environment variable."]
+    
+    try:
+        resp = requests.get(
+            "https://serpapi.com/search",
+            params={
+                "engine": "google",
+                "q": keyword,
+                "api_key": serpapi_key,
+                "num": limit,
+            },
+            timeout=30
+        )
+        print("SerpAPI status:", resp.status_code)
+        print("SerpAPI body:", resp.text[:500])
+        
+        resp.raise_for_status()
+        data = resp.json()
+        
+        results = []
+        organic = data.get("organic_results", [])
+        for item in organic[:limit]:
+            link = item.get("link")
+            if link:
+                results.append(link)
+        
+        if not results:
+            return ["No results found."]
+        return results
+        
+    except Exception as e:
+        return [f"Error during search: {str(e)}"]
+    
+@mcp.tool()
+def fetch_raw_url(url: str, timeout: int = 30) -> str:
+    """
+    Fetch raw content from a given URL using HTTP GET.
+    Args:
+        url (str): The URL to fetch.
+        timeout (int): Timeout in seconds.
+    Returns:
+        str: Raw response body (HTML/text).
+    """
+    import requests
+    
+    if not url.startswith(("http://", "https://")):
+        return f"Invalid URL: {url}"
+    
+    try:
+        resp = requests.get(url, timeout=timeout)
+        resp.raise_for_status()
+        
+        try:
+            return resp.text
+        except Exception:
+            return resp.content.decode('utf-8', errors='ignore')
+        
+    except Exception as e:
+        return f"Error fetching URL {url}: {str(e)}"
+
 if __name__ == "__main__":
     app = mcp.streamable_http_app()
     uvicorn.run(app, host="127.0.0.1", port=8081)

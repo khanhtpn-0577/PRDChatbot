@@ -6,14 +6,14 @@ import asyncio
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
-from backend.db.db_models import Section, ContextItem, PRD, Base
-from backend.mcp.mcp_client import *
+from db.db_models import Section, ContextItem, PRD, Base
+from core.mcp_client import *
 
-from backend.core.orchestrator import ai_orchestrator
-from backend.core.mcp_integration import mcp_integration
-from backend.core.prd_agent import prd_chatbot
-from backend.core.prd_storage import save_prd, extract_prd_text
-from backend.core.summarizer import summarize_and_update
+from core.orchestrator import ai_orchestrator
+from core.mcp_integration import mcp_integration
+from core.prd_agent import prd_chatbot
+from core.prd_storage import save_prd, extract_prd_text
+from core.summarizer import summarize_and_update
 
 load_dotenv()
 client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
@@ -43,7 +43,7 @@ def create_section(name: str):
 
 # ============ MAIN CHAT LOOP ===================
 async def run_chat():
-    section_id = create_section("mcp-orchestrated-test-v69")
+    section_id = create_section("mcp-orchestrated-test-v22")
     print(f"Created section: {section_id}\n")
 
     while True:
@@ -61,7 +61,7 @@ async def run_chat():
             mcp_data = await mcp_integration(user_input)
             if mcp_data:
                 enriched_input = f"{user_input}\n\n[Dữ liệu MCP thu thập được:]\n{mcp_data}"
-                reply = await prd_chatbot(section_id, enriched_input, chat_history=chat_history, BUFFER_SIZE=BUFFER_SIZE)
+                reply = await prd_chatbot(section_id, enriched_input, chat_history=chat_history, is_deep_research=0, BUFFER_SIZE=BUFFER_SIZE)
                 
                 # extract prd
                 extraction = extract_prd_text(reply)
@@ -80,7 +80,7 @@ async def run_chat():
             chat_history.append((user_input, reply))
 
         elif route == "PRD_related_answer":
-            reply = await prd_chatbot(section_id, user_input, chat_history=chat_history, BUFFER_SIZE=BUFFER_SIZE)
+            reply = await prd_chatbot(section_id, user_input, chat_history=chat_history, is_deep_research= 1,  BUFFER_SIZE=BUFFER_SIZE)
             chat_history.append((user_input, reply))
             # extract prd
             extraction = extract_prd_text(reply)

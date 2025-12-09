@@ -2,6 +2,7 @@ from sqlalchemy import create_engine, Column, String, Text, ForeignKey, Integer,
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import declarative_base, relationship
 import uuid
+from sqlalchemy import Enum
 
 #Dinh nghia cac bang trong db
 
@@ -40,8 +41,25 @@ class PRD(Base):
 
     section = relationship("Section", back_populates="prd")
     architecture = relationship("Architecture", back_populates="prd", cascade="all, delete-orphan") # Quan he 1-n voi Architecture, khi xoa PRD thi xoa Architecture lien quan
-
-
+    features = relationship("Feature", back_populates="prd", cascade="all, delete-orphan")
+    
+class Feature(Base):
+    __tablename__ = "features"
+    feature_id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    prd_id = Column(UUID(as_uuid=True), ForeignKey("prds.prd_id"), nullable=False)
+    
+    title = Column(String, nullable=False)
+    user_story = Column(Text, nullable=False)
+    business_value = Column(String)
+    priority_moscow = Column(Enum("Must", "Should", "Could", "Wont", name="moscow_priority"), nullable=False)
+    
+    status = Column(Enum("Active", "Removed", name="feature_status"), default="Active")
+    
+    created_at = Column(DateTime, default=func.now())
+    updated_at = Column(DateTime, default=func.now(), onupdate=func.now())
+    
+    prd = relationship("PRD", back_populates="features")
+    
     
 class Architecture(Base):
     __tablename__ = "architectures"

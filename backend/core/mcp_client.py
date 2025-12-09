@@ -1,5 +1,5 @@
 import asyncio
-from mcp import ClientSession
+from mcp.client.session import ClientSession
 from mcp.client.streamable_http import streamablehttp_client
 import os
 import json
@@ -8,7 +8,7 @@ from dotenv import load_dotenv
 import re
 
 ##MCP Server URL
-MCP_SERVER_URL = "https://c90c2aa10623.ngrok-free.app/mcp"
+MCP_SERVER_URL = "https://ae5d0ec5e0bc.ngrok-free.app/mcp"
 
 ##LLM CONFIG
 load_dotenv()
@@ -75,7 +75,7 @@ async def call_llm(prompt, functions):
     
     system_prompt = (
         "You are an AI orchestrator. You can call one of the following tools. "
-        "Respond strictly in JSON format: "
+        "Respond strictly in format: "
         "[{\"name\": <tool_name>, \"args\": {<key>: <value>}}]"
     )
     

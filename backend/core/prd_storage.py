@@ -4,7 +4,7 @@ from dotenv import load_dotenv
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
-from backend.db.db_models import Section, ContextItem, PRD, Base
+from db.db_models import Section, ContextItem, PRD, Base
 
 load_dotenv()
 client = OpenAI()
