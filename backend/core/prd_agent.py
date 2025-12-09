@@ -3,6 +3,7 @@ from dotenv import load_dotenv
 from core.summarizer import get_latest_summary
 from core.moscow import moscow_define_priority
 from core.deep_research import *
+from core.utils.json_parser import *
 
 load_dotenv()
 client = OpenAI()
@@ -20,5 +21,9 @@ async def prd_chatbot(section_id, user_input, chat_history, is_deep_research, BU
         BUFFER_SIZE=BUFFER_SIZE
     )
     
-    #print("PRD OUTPUT FROM MOSCOW FUNCTION:", prd_output)
-    return prd_output
+    json_data = parse_prd_json(prd_output)
+
+    return {
+        "raw": prd_output,
+        "json": json_data     # None nếu không parse được
+    }

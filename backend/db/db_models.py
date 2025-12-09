@@ -17,7 +17,22 @@ class Section(Base):
     #Dinh nghia khoa ngoai
     context_items = relationship("ContextItem", back_populates="section")
     prd = relationship("PRD", back_populates="section")
+    messages = relationship("Message", back_populates="section", cascade="all, delete-orphan")
     
+class Message(Base):
+    __tablename__ = "messages"
+
+    message_id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    section_id = Column(UUID(as_uuid=True), ForeignKey("sections.section_id"), nullable=False)
+    
+    role = Column(Enum("user", "assistant", name="message_role"), nullable=False)
+    content = Column(Text, nullable=False)
+    
+    created_at = Column(DateTime, default=func.now())
+
+    # Relationship
+    section = relationship("Section", back_populates="messages")
+
 class ContextItem(Base):
     __tablename__ = "context_items"
     item_id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)

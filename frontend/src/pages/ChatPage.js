@@ -21,6 +21,12 @@ export function setupChatPage() {
     const reply = await sendMessageToBot(text);
     chatStore.setLoading(false);
 
-    chatStore.addBotMessage(reply.content);
+    if (reply.flag === "prd_related") {
+      // reply.message là array JSON chứa các feature
+      chatStore.addBotMessage(reply.message, "table");
+    } else {
+      chatStore.addBotMessage(reply.message, "text");
+    }
   });
+
 }

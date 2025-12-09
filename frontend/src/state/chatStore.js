@@ -7,6 +7,8 @@
 
 class ChatStore {
   constructor() {
+    // Lấy lại session_id nếu người dùng reload trang
+    this.sectionId = sessionStorage.getItem("section_id") || null;
     this.messages = []; // [{ role: 'user' | 'bot', content: string }]
     this.loading = false;
 
@@ -35,11 +37,33 @@ class ChatStore {
 
   getState() {
     return {
+      sectionId: this.sectionId,
       messages: this.messages,
       loading: this.loading,
     };
   }
 
+  // ==== SESSION MANAGEMENT ====
+
+  /**
+   * Lưu sectionId (UUID) khi backend trả về lần đầu tiên
+   */
+  setSectionId(id) {
+    this.sectionId = id;
+    sessionStorage.setItem("section_id", id);
+    this.notify();
+  }
+
+  /**
+   * Reset hoàn toàn session chat (phục vụ nút "New Chat")
+   */
+  clearSession() {
+    this.sectionId = null;
+    sessionStorage.removeItem("section_id");
+    this.messages = [];
+    this.loading = false;
+    this.notify();
+  }
   // ==== MUTATIONS ====
 
   addUserMessage(content) {
@@ -50,13 +74,15 @@ class ChatStore {
     this.notify();
   }
 
-  addBotMessage(content) {
+  addBotMessage(content, type = "text") {
     this.messages.push({
       role: "bot",
       content,
+      type, // "text" | "table"
     });
     this.notify();
   }
+
 
   setLoading(state) {
     this.loading = state;
