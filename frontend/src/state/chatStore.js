@@ -1,70 +1,81 @@
-// src/state/chatStore.js
-
 /**
- * Chat store quản lý toàn bộ state của cuộc hội thoại.
- * Sử dụng pattern Observable đơn giản: UI có thể đăng ký lắng nghe thay đổi.
+ * Chat store quản lý toàn bộ state của cuộc hội thoại + document (SRS).
+ * Sử dụng pattern Observable đơn giản.
  */
 
 class ChatStore {
   constructor() {
-    // Lấy lại session_id nếu người dùng reload trang
+    // ===== SESSION =====
     this.sectionId = sessionStorage.getItem("section_id") || null;
-    this.messages = []; // [{ role: 'user' | 'bot', content: string }]
+
+    // ===== CHAT STATE =====
+    this.messages = []; // [{ role: 'user' | 'bot', content, type }]
     this.loading = false;
 
-    // Danh sách callback để UI subscribe
+    // ===== DOCUMENT STATE (SRS) =====
+    this.srsContent = ""; // nội dung SRS
+    this.hasSRS = false;  // đã generate SRS hay chưa
+
+    // ===== OBSERVERS =====
     this.listeners = [];
   }
 
-  // ==== OBSERVER PATTERN ====
+  // =====================
+  // OBSERVER PATTERN
+  // =====================
 
-  /**
-   * Đăng ký hàm lắng nghe state thay đổi
-   * @param {Function} listener 
-   */
   subscribe(listener) {
     this.listeners.push(listener);
   }
 
-  /**
-   * Gọi tất cả listener mỗi khi state thay đổi
-   */
   notify() {
     this.listeners.forEach((listener) => listener(this.getState()));
   }
 
-  // ==== STATE GETTERS ====
+  // =====================
+  // STATE GETTERS
+  // =====================
 
   getState() {
     return {
       sectionId: this.sectionId,
+
+      // chat
       messages: this.messages,
       loading: this.loading,
+
+      // document
+      srsContent: this.srsContent,
+      hasSRS: this.hasSRS,
     };
   }
 
-  // ==== SESSION MANAGEMENT ====
+  // =====================
+  // SESSION MANAGEMENT
+  // =====================
 
-  /**
-   * Lưu sectionId (UUID) khi backend trả về lần đầu tiên
-   */
   setSectionId(id) {
     this.sectionId = id;
     sessionStorage.setItem("section_id", id);
     this.notify();
   }
 
-  /**
-   * Reset hoàn toàn session chat (phục vụ nút "New Chat")
-   */
   clearSession() {
     this.sectionId = null;
     sessionStorage.removeItem("section_id");
+
     this.messages = [];
     this.loading = false;
+
+    this.srsContent = "";
+    this.hasSRS = false;
+
     this.notify();
   }
-  // ==== MUTATIONS ====
+
+  // =====================
+  // CHAT MUTATIONS
+  // =====================
 
   addUserMessage(content) {
     this.messages.push({
@@ -78,11 +89,10 @@ class ChatStore {
     this.messages.push({
       role: "bot",
       content,
-      type, // "text" | "table"
+      type, // "text" | "table" | (sau này có thể thêm "system")
     });
     this.notify();
   }
-
 
   setLoading(state) {
     this.loading = state;
@@ -94,7 +104,39 @@ class ChatStore {
     this.loading = false;
     this.notify();
   }
+
+  // =====================
+  // DOCUMENT (SRS) MUTATIONS
+  // =====================
+
+  /**
+   * Set nội dung SRS sau khi gọi /api/generate_srs
+   */
+  setSRSContent(content) {
+    this.srsContent = content || "";
+    this.hasSRS = Boolean(content && content.length > 0);
+    this.notify();
+  }
+
+  /**
+   * Update SRS khi user chỉnh sửa trong canvas
+   * (dùng cho live edit / autosave sau này)
+   */
+  updateSRSContent(content) {
+    this.srsContent = content;
+    this.hasSRS = true;
+    this.notify();
+  }
+
+  /**
+   * Reset document (dùng khi New Chat / New Document)
+   */
+  clearSRS() {
+    this.srsContent = "";
+    this.hasSRS = false;
+    this.notify();
+  }
 }
 
-// Singleton: chỉ tạo 1 instance duy nhất
+// Singleton
 export const chatStore = new ChatStore();
