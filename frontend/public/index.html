@@ -2,39 +2,34 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>ChatBot PRD</title>
+  <title>AI SRS Builder</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-  <!-- Load Tailwind OUTPUT CSS -->
-  <link rel="stylesheet" href="../src/styles/tailwind.output.css" />
+  <!-- CÁCH 1 (Khuyên dùng khi dev): Dùng CDN để chắc chắn Tailwind hoạt động -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Nếu bạn muốn dùng file local, hãy chắc chắn đường dẫn đúng. 
+       Nhưng thường ../src sẽ không truy cập được nếu chạy server từ thư mục public.
+       Nên tạm thời comment dòng dưới lại. -->
+  <!-- <link rel="stylesheet" href="../src/styles/tailwind.output.css" /> -->
+
+  <!-- CÁCH 2: Ép chiều cao full màn hình cho container cha -->
+  <style>
+    html, body, #app {
+      height: 100%;
+      width: 100%;
+      margin: 0;
+      padding: 0;
+      overflow: hidden; /* Tránh scroll bar kép */
+    }
+  </style>
 </head>
 
-<body class="bg-gray-100 h-screen flex justify-center items-center">
+<body>
+  <!-- Container chính của ứng dụng -->
+  <div id="app" class="h-full w-full"></div>
 
-  <div class="w-full max-w-3xl h-[90vh] bg-white shadow-xl rounded-lg flex flex-col">
-
-    <!-- CHAT WINDOW -->
-    <div id="chat-window" class="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50">
-      <!-- Messages sẽ render tại đây -->
-    </div>
-
-    <!-- INPUT FORM -->
-    <div class="border-t p-4 bg-white flex gap-2">
-      <textarea
-        id="chat-input"
-        rows="1"
-        placeholder="Nhập tin nhắn..."
-        class="flex-1 p-2 border rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-blue-400"
-      ></textarea>
-
-      <button
-        id="chat-send"
-        class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-      >
-        Send
-      </button>
-    </div>
-  </div>
-
+  <!-- Script chính -->
   <script type="module" src="../src/main.js"></script>
 </body>
 </html>
